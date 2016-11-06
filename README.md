@@ -44,3 +44,7 @@ Transparent Proxying over DigitalOcean Droplets
 [ds] ---> Proxying network via sshuttle...
 client: Connected.
 ```
+
+## LICENSE
+
+WTFPL.
