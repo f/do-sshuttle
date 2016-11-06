@@ -1,0 +1,33 @@
+#!/bin/bash
+
+DROPLET_NAME="do-sshuttle-server"
+DROPLET_FILE=/tmp/droplet-vpn.json
+
+echo "do-shuttle v0.0.1"
+echo "Fatih Kadir Akın <fatihkadirakin@gmail.com>"
+echo "Transparent Proxying over DigitalOcean Droplets"
+prefix="[ds]"
+echo
+
+if [ ! -f $DROPLET_FILE ]; then
+  echo "$prefix <--- Getting $DROPLET_NAME Droplet information..."
+  DROPLET_INFO=`doctl compute droplet list $DROPLET_NAME --output json`
+  echo $DROPLET_INFO > $DROPLET_FILE
+fi
+
+DROPLET_IP=`cat $DROPLET_FILE | python -c 'import sys, json; print json.load(sys.stdin)[0]["networks"]["v4"][0]["ip_address"]'`
+DROPLET_ID=`cat $DROPLET_FILE | python -c 'import sys, json; print json.load(sys.stdin)[0]["id"]'`
+
+echo "$prefix ---> Powering on $DROPLET_NAME (root@$DROPLET_IP) Droplet..."
+doctl compute droplet-action power-on $DROPLET_ID > /dev/null
+echo "$prefix ---> Power-on Request sent..."
+echo "$prefix ---> Allow server 10 seconds to boot..."
+sleep 10
+
+echo "$prefix ---> Proxying network via sshuttle..."
+sshuttle -r root@$DROPLET_IP 0.0.0.0/0 > /dev/null
+echo "$prefix ---> sshuttle stopped..."
+echo "$prefix ---> Powering off $DROPLET_NAME (root@$DROPLET_IP) Droplet..."
+doctl compute droplet-action power-off $DROPLET_ID > /dev/null
+echo "$prefix ---> Power-off Request sent..."
+echo "$prefix ---> Bye."
